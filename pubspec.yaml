@@ -1,0 +1,25 @@
+name: formik_flutter
+description: A lightweight, declarative form state management solution for Flutter inspired by Formik.
+version: 0.0.1
+homepage: https://github.com/SamiUllahOfficiale/formik_flutter
+repository: https://github.com/SamiUllahOfficiale/formik_flutter
+issue_tracker: https://github.com/SamiUllahOfficiale/formik_flutter/issues
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+topics:
+  - forms
+  - form-validation
+  - formik
+  - state-management
