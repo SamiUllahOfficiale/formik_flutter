@@ -1,102 +1,126 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import '../utils/map_path.dart';
 
-typedef FormikSubmitCallback = void Function(
-  Map<String, dynamic> values,
-  FormikController formik,
-);
+typedef FormikValidator<T> = String? Function(T? value);
+typedef FormikSubmitHandler = void Function(Map<String, dynamic> values);
 
 class FormikController extends ChangeNotifier {
-  final Map<String, dynamic> initialValues;
-  final FormikSubmitCallback? onSubmit;
-
-  final Map<String, dynamic> _values = {};
+  Map<String, dynamic> _values;
+  final Map<String, dynamic> _initialValues;
   final Map<String, String?> _errors = {};
-  final Map<String, bool> _touched = {};
-  final Map<String, String? Function()> _fieldValidators = {};
+  final Set<String> _touched = {};
+  final Map<String, FormikValidator<dynamic>> _fieldValidators = {};
+
+  final Map<String, String?> Function(Map<String, dynamic> values)?
+      validateForm;
+  final FormikSubmitHandler? onSubmit;
 
   bool _isSubmitting = false;
 
   FormikController({
-    this.initialValues = const {},
+    required Map<String, dynamic> initialValues,
+    this.validateForm,
     this.onSubmit,
-  }) {
-    _values.addAll(initialValues);
+  })  : _initialValues = Map<String, dynamic>.from(initialValues),
+        _values = Map<String, dynamic>.from(initialValues) {
+    validateAll();
   }
 
-  Map<String, dynamic> get values => Map.unmodifiable(_values);
+  Map<String, dynamic> get values => _values;
   Map<String, String?> get errors => Map.unmodifiable(_errors);
-  Map<String, bool> get touched => Map.unmodifiable(_touched);
+  Set<String> get touched => Set.unmodifiable(_touched);
   bool get isSubmitting => _isSubmitting;
+  bool get isValid => _errors.values.every((err) => err == null);
+  bool get isDirty => !mapEquals(_values, _initialValues);
 
-  bool get isValid => _errors.values.every((error) => error == null);
-
-  bool get isDirty {
-    for (final key in _values.keys) {
-      final initialVal = initialValues[key] ?? '';
-      final currentVal = _values[key] ?? '';
-      if (currentVal != initialVal) return true;
-    }
-    return false;
-  }
-
-  dynamic getValue(String name) => _values[name];
-
-  void registerFieldValidator(String name, String? Function() validator) {
+  void registerFieldValidator(String name, FormikValidator<dynamic> validator) {
     _fieldValidators[name] = validator;
-    _errors[name] = validator();
   }
 
   void unregisterFieldValidator(String name) {
     _fieldValidators.remove(name);
-    _errors.remove(name);
   }
 
-  void setFieldValue(String name, dynamic value) {
-    _values[name] = value;
-    _touched[name] = true;
+  T? getFieldValue<T>(String name) {
+    return MapPath.getIn(_values, name) as T?;
+  }
 
-    if (_fieldValidators.containsKey(name)) {
-      _errors[name] = _fieldValidators[name]!();
+  String? getFieldError(String name) => _errors[name];
+
+  bool isFieldTouched(String name) => _touched.contains(name);
+
+  void setFieldValue(String name, dynamic value, {bool shouldValidate = true}) {
+    _values = MapPath.setIn(_values, name, value);
+    markFieldTouched(name, shouldValidate: false);
+
+    if (shouldValidate) {
+      validateSingleField(name);
+    }
+    notifyListeners();
+  }
+
+  void markFieldTouched(String name, {bool shouldValidate = true}) {
+    _touched.add(name);
+    if (shouldValidate) {
+      validateSingleField(name);
+    }
+    notifyListeners();
+  }
+
+  String? validateSingleField(String name) {
+    String? error;
+
+    final fieldValidator = _fieldValidators[name];
+    if (fieldValidator != null) {
+      final value = getFieldValue(name);
+      error = fieldValidator(value);
+    }
+
+    if (error == null && validateForm != null) {
+      final formErrors = validateForm!(_values);
+      error = formErrors[name];
+    }
+
+    _errors[name] = error;
+    notifyListeners();
+    return error;
+  }
+
+  bool validateAll() {
+    _errors.clear();
+
+    _fieldValidators.forEach((name, validator) {
+      final value = getFieldValue(name);
+      final err = validator(value);
+      if (err != null) {
+        _errors[name] = err;
+      }
+    });
+
+    if (validateForm != null) {
+      final formErrors = validateForm!(_values);
+      formErrors.forEach((key, err) {
+        if (err != null) {
+          _errors[key] = err;
+        }
+      });
     }
 
     notifyListeners();
+    return isValid;
   }
 
-  void setFieldTouched(String name, [bool isTouched = true]) {
-    _touched[name] = isTouched;
-    notifyListeners();
-  }
+  Future<void> submitForm() async {
+    _touched.addAll(_fieldValidators.keys);
 
-  void setFieldError(String name, String? error) {
-    _errors[name] = error;
-    notifyListeners();
-  }
-
-  bool validateForm() {
-    bool hasErrors = false;
-    _fieldValidators.forEach((name, validator) {
-      final error = validator();
-      _errors[name] = error;
-      _touched[name] = true;
-      if (error != null) {
-        hasErrors = true;
-      }
-    });
-    notifyListeners();
-    return !hasErrors;
-  }
-
-  Future<void> handleSubmit() async {
-    final formIsValid = validateForm();
-    if (!formIsValid) return;
+    final valid = validateAll();
+    if (!valid) return;
 
     _isSubmitting = true;
     notifyListeners();
 
     try {
-      if (onSubmit != null) {
-        onSubmit!(_values, this);
-      }
+      onSubmit?.call(_values);
     } finally {
       _isSubmitting = false;
       notifyListeners();
@@ -104,16 +128,10 @@ class FormikController extends ChangeNotifier {
   }
 
   void resetForm() {
-    _values.clear();
-    _values.addAll(initialValues);
-    _touched.clear();
+    _values = Map<String, dynamic>.from(_initialValues);
     _errors.clear();
+    _touched.clear();
     _isSubmitting = false;
-
-    _fieldValidators.forEach((name, validator) {
-      _errors[name] = validator();
-    });
-
     notifyListeners();
   }
 }

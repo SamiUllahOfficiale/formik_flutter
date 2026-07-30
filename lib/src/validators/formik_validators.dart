@@ -1,8 +1,8 @@
-typedef FormikValidator = String? Function(dynamic value);
+import 'package:formik_flutter/formik_flutter.dart';
 
 class FormikValidators {
-  static FormikValidator compose(List<FormikValidator> validators) {
-    return (value) {
+  static FormikValidator<T> compose<T>(List<FormikValidator<T>> validators) {
+    return (T? value) {
       for (final validator in validators) {
         final error = validator(value);
         if (error != null) return error;
@@ -11,80 +11,43 @@ class FormikValidators {
     };
   }
 
-  static FormikValidator required({String? message}) {
+  static FormikValidator<dynamic> required(
+      {String message = 'This field is required'}) {
     return (value) {
-      final defaultMessage = message ?? 'This field is required';
-      if (value == null) return defaultMessage;
-      if (value is String && value.trim().isEmpty) return defaultMessage;
-      if (value is bool && !value) return defaultMessage;
-      if (value is Iterable && value.isEmpty) return defaultMessage;
-      if (value is Map && value.isEmpty) return defaultMessage;
+      if (value == null) return message;
+      if (value is String && value.trim().isEmpty) return message;
+      if (value is Iterable && value.isEmpty) return message;
+      if (value is Map && value.isEmpty) return message;
       return null;
     };
   }
 
-  static FormikValidator email({String? message}) {
-    final emailRegex = RegExp(
-      r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$",
-    );
-
+  static FormikValidator<String> email(
+      {String message = 'Invalid email address'}) {
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
     return (value) {
-      if (value == null) return null;
-      final str = value.toString().trim();
-      if (str.isEmpty) return null;
-
-      final defaultMessage = message ?? 'Invalid email address';
-      return emailRegex.hasMatch(str) ? null : defaultMessage;
+      if (value == null || value.trim().isEmpty) return null;
+      if (!emailRegex.hasMatch(value)) return message;
+      return null;
     };
   }
 
-  static FormikValidator minLength(int min, {String? message}) {
+  static FormikValidator<String> minLength(int length, {String? message}) {
     return (value) {
-      if (value == null) return null;
-      final str = value.toString();
-      if (str.isEmpty) return null;
-
-      return str.length < min
-          ? (message ?? 'Must be at least $min characters')
-          : null;
-    };
-  }
-
-  static FormikValidator maxLength(int max, {String? message}) {
-    return (value) {
-      if (value == null) return null;
-      final str = value.toString();
-      if (str.isEmpty) return null;
-
-      return str.length > max
-          ? (message ?? 'Cannot exceed $max characters')
-          : null;
-    };
-  }
-
-  static FormikValidator matches(RegExp regex, {required String message}) {
-    return (value) {
-      if (value == null) return null;
-      final str = value.toString();
-      if (str.isEmpty) return null;
-
-      return regex.hasMatch(str) ? null : message;
-    };
-  }
-
-  static FormikValidator custom(
-    bool Function(dynamic value) predicate, {
-    required String message,
-  }) {
-    return (value) {
-      if (value == null) return null;
-      if (value is String && value.trim().isEmpty) return null;
-
-      try {
-        return predicate(value) ? null : message;
-      } catch (_) {
-        return message;
+      if (value == null || value.isEmpty) return null;
+      if (value.length < length) {
+        return message ?? 'Must be at least $length characters';
       }
+      return null;
+    };
+  }
+
+  static FormikValidator<String> pattern(RegExp pattern,
+      {String message = 'Invalid format'}) {
+    return (value) {
+      if (value == null || value.isEmpty) return null;
+      if (!pattern.hasMatch(value)) return message;
+      return null;
     };
   }
 }

@@ -1,8 +1,14 @@
 library formik_flutter;
 
-export 'src/components/formik_field.dart';
+// Controllers
 export 'src/controllers/formik_controller.dart';
-export 'src/formik.dart';
-export 'src/scopes/formik_scope.dart';
+
+// Widgets
+export 'src/widgets/formik.dart';
+export 'src/widgets/formik_field.dart';
+
+// Validators
 export 'src/validators/formik_validators.dart';
-export 'src/widgets/formik_text_field.dart';
+
+// Utils
+export 'src/utils/map_path.dart';
