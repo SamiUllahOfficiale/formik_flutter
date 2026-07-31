@@ -1,5 +1,6 @@
-## 1.0.1
+## 1.0.2
 
+- Formatted LICENSE file to match standard OSI MIT template.
 - Updated LICENSE format for pub.dev recognition.
 - Added dartdoc documentation across public classes and members.
 - **Breaking Change**: Transitioned to a completely headless builder architecture using `FormikField`.
