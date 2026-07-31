@@ -1,5 +1,6 @@
-## 1.0.2
+## 1.0.3
 
+- Updated LICENSE format to standard OSI MIT structure.
 - Formatted LICENSE file to match standard OSI MIT template.
 - Updated LICENSE format for pub.dev recognition.
 - Added dartdoc documentation across public classes and members.
