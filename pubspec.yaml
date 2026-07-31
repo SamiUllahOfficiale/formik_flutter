@@ -1,6 +1,6 @@
 name: formik_flutter
 description: A lightweight, declarative form state management solution for Flutter inspired by Formik.
-version: 1.0.0
+version: 1.0.1
 homepage: https://github.com/SamiUllahOfficiale/formik_flutter
 repository: https://github.com/SamiUllahOfficiale/formik_flutter
 issue_tracker: https://github.com/SamiUllahOfficiale/formik_flutter/issues

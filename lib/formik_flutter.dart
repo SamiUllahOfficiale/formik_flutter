@@ -1,4 +1,5 @@
-library formik_flutter;
+/// A reactive form management library inspired by Formik.
+library;
 
 // Controllers
 export 'src/controllers/formik_controller.dart';
